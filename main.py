@@ -1,3 +1,25 @@
+"""
+Main script to generate a PDF calendar with day, week, and month views using ReportLab.
+
+This script fetches events from multiple online ICS calendars specified in a `config.yaml` file,
+combines them with hardcoded events, and generates a PDF calendar with day, week, and month views
+for the current date using ReportLab.
+
+Constants:
+- URLS: List of URLs from the `config.yaml` file containing ICS calendar URLs.
+
+Execution:
+When executed as a standalone script, `main()` is called, which:
+1. Reads the calendar URLs from `config.yaml`.
+2. Fetches events from each URL using `fetch_events_from_ics`.
+3. Adds hardcoded events to the fetched events list.
+4. Compiles day, week, and month views for the current date into a PDF document named `calendar.pdf`.
+
+Note:
+This script requires ReportLab for PDF generation and `ics` library for parsing ICS calendars.
+Make sure to have the necessary dependencies installed before running this script.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -5,7 +27,7 @@ from typing import Sequence, Optional, Tuple
 from ics import Calendar, Event
 
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, Paragraph, Spacer, Flowable
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Flowable
 import requests
 from yaml import safe_load
 
@@ -15,20 +37,19 @@ import drawings
 with open("config.yaml", "r", encoding="utf-8") as cf:
     URLS = safe_load(cf)["URLS"]
 
-WEEKDAYS = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-]
-
-events = []
 
 def fetch_events_from_ics(url):
-    """Function to fetch events from an online ICS calendar"""
+    """Fetch events from an online ICS calendar.
+
+    Args:
+        url (str): The URL of the ICS calendar.
+
+    Returns:
+        list: A list of Event objects parsed from the ICS calendar.
+
+    If fetching the calendar fails (HTTP status code other than 200),
+    an empty list is returned.
+    """
 
     response = requests.get(url, timeout=60)
     if response.status_code == 200:
@@ -51,28 +72,14 @@ def day_view(
     elements.append(title)
     elements.append(Spacer(1, 12))  # Add some space below the title
 
-    # Create hourly schedule table
-    data = [["Time", "Task"]]
-    for hour in range(hour_span[0], hour_span[1]):
-        row = [Paragraph(f"{hour}:00", styles.minimalist)]
-        data.append(row)
-    drawing = drawings.draw_schedule(
+    table = drawings.draw_day_schedule(
         events,
-        width=styles.day.colWidth * 0.95,
+        width=styles.day.colWidth + styles.day.colWidth,
         height=styles.day.rowHeight * (hour_span[1] - hour_span[0]),
-        hour_min=hour_span[0],
-        hour_max=hour_span[1],
+        hour_span=hour_span,
         line_width=styles.day.lineWidth,
+        time_col_width=styles.day.timeWidth,
     )
-    data[1].append(drawing)
-
-    table = Table(
-        data,
-        colWidths=[styles.day.timeWidth, styles.day.colWidth],
-        rowHeights=[styles.day.headerHeight] +
-        [styles.day.rowHeight for _ in range(hour_span[1] - hour_span[0])],
-    )  # Adjusted colWidths and rowHeights
-    table.setStyle(styles.day_table)
     elements.append(table)
 
     return elements
@@ -99,33 +106,16 @@ def week_view(
     elements.append(Spacer(1, 12))  # Add some space below the title
 
     # Create week schedule table
-    data = [["Time"] + WEEKDAYS]
-    for hour in range(hour_span[0], hour_span[1]):
-        row = [Paragraph(f"{hour}:00", styles.minimalist)]
-        data.append(row)
-    for day in range(7):
-        day_date = start_date + timedelta(days=day)
-        day_events = [
-            event for event in events if event.begin.date() == day_date.date()
-        ]
-        day_drawing = drawings.draw_schedule(
-            day_events,
-            width=styles.week.colWidth * 0.95,
-            height=styles.week.rowHeight * (hour_span[1] - hour_span[0]),
-            hour_min=hour_span[0],
-            hour_max=hour_span[1],
-            line_width=styles.week.lineWidth,
-        )
-        data[1].append(day_drawing)
-    table = Table(
-        data,
-        colWidths=[styles.week.timeWidth]
-        + [styles.week.colWidth for _ in range(7)],
-        rowHeights=[styles.week.headerHeight] +
-        # [styles.week.rowHeight * (hour_span[1] - hour_span[0])]
-        [styles.week.rowHeight for _ in range(hour_span[1] - hour_span[0])],
+    table = drawings.draw_week_schedule(
+        events=events,
+        start_date=start_date,
+        day_width=styles.week.colWidth,
+        height=styles.week.headerHeight
+        + styles.week.rowHeight * (hour_span[1] - hour_span[0]),
+        hour_span=hour_span,
+        time_col_width=styles.week.timeWidth,
+        w_style=styles.weekday
     )
-    table.setStyle(styles.week_table)
     elements.append(table)
 
     return elements
@@ -134,7 +124,6 @@ def week_view(
 def month_view(
     year: int,
     month: int,
-    style: ParagraphStyle,  # pylint: disable=E0602
     events: Optional[Sequence[Event]] = None,
 ) -> Sequence[Flowable]:
     """Function to create a month view page with events."""
@@ -148,71 +137,21 @@ def month_view(
     elements.append(title)
     elements.append(Spacer(1, 12))  # Add some space below the title
 
-    # Create month calendar table
-    data = [[Paragraph(weekday[:3], styles.weekday) for weekday in WEEKDAYS]]
-    month_calendar = [[]]
-
-    start_day = datetime(year, month, 1).weekday()  # 0 is Monday, 6 is Sunday
-
-    # Fill in leading empty cells before the first day of the month
-    for _ in range(start_day):
-        month_calendar[-1].append("")
-
-    day = 1
-    while day <= 31:
-        try:
-            if len(month_calendar[-1]) == 7:
-                month_calendar.append([])
-            day_events = [
-                event.name
-                for event in events
-                if (
-                    event.begin.year == year
-                    and event.begin.month == month
-                    and event.begin.day == day
-                )
-            ]
-            day_cell = [Paragraph(f"{day}", style)]
-            day_drawing = drawings.fit_rectangles(
-                day_events,
-                max_events=4,
-                width=0.92 * styles.month.colWidth,
-                max_height=(
-                    styles.month.rowHeight
-                    - getattr(style, "fontSize", 0)
-                    - getattr(style, "spaceAfter", 0)
-                )
-                * 0.8,
-                padding=2,
-            )
-            day_cell.append(day_drawing)
-            month_calendar[-1].append(day_cell)
-            day += 1
-        except ValueError:
-            break
-
-    # Fill in remaining blanks if necessary
-    while len(month_calendar[-1]) < 7:
-        month_calendar[-1].append("")
-
-    for week in month_calendar:
-        data.append(week)
-
-    table = Table(
-        data,
-        colWidths=[styles.month.colWidth for _ in range(7)],
-        rowHeights=[styles.month.headerHeight]
-        + [styles.month.rowHeight for _ in range(len(month_calendar))],
+    table = drawings.draw_month_schedule(
+        year=year,
+        month=month,
+        events=events,
+        p_style=styles.minimalist,
+        t_style=styles.month_table,
+        w_style=styles.weekday,
+        table=styles.month,
     )
-    table.setStyle(styles.month_table)
     elements.append(table)
 
     return elements
 
 
 def main() -> None:
-    global events
-
     # Set up the document
     doc = SimpleDocTemplate("calendar.pdf", pagesize=A4)
 
@@ -237,7 +176,6 @@ def main() -> None:
         month_view(
             year=now.year,
             month=now.month,
-            style=styles.minimalist,
             events=list(
                 filter(lambda event: event.begin.date().month == now.month, events)
             ),
