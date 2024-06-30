@@ -1,6 +1,10 @@
+from datetime import time
+from math import ceil, floor
+from typing import Sequence, Optional
+
+from ics import Event
 from reportlab.graphics.shapes import Drawing, Circle, String, Rect
 from reportlab.lib.colors import black, white
-from typing import Optional
 
 
 BUBBLE_RADIUS = 5
@@ -51,7 +55,11 @@ def rectangle(
 
 
 def fit_rectangles(
-    events, width: int, max_height, padding: int = 2, max_events: int = 4
+    events: Sequence[str],
+    width: int,
+    max_height: int,
+    padding: int = 2,
+    max_events: int = 4,
 ):
     drawing = Drawing(width, max_height)
     events = events[:max_events]
@@ -59,6 +67,39 @@ def fit_rectangles(
     for index, event in enumerate(events):
         y = (height + padding) * index
         shape, text = _rectangle_shape_text(event, 0, y, width, height)
+        drawing.add(shape)
+        drawing.add(text)
+    return drawing
+
+
+def _time_to_float(t: time):
+    return t.hour + t.minute / 60 + t.second / 3600
+
+
+def draw_schedule(
+    events: Sequence[Event],
+    width: int,
+    height: int,
+    hour_min: int,
+    hour_max: int,
+    line_width: float = 0,
+):
+    drawing = Drawing(width, height)
+    for event in events:
+        # Calculate heights and adjust based on line widths TODO Review adjustments
+        y0 = (
+            height
+            * (hour_max - _time_to_float(event.begin.time()))
+            / (hour_max - hour_min)
+        )
+        y0 += (int(hour_max - _time_to_float(event.begin.time())) - 2) * line_width
+        y1 = (
+            height
+            * (hour_max - _time_to_float(event.end.time()))
+            / (hour_max - hour_min)
+        )
+        y1 += (int(hour_max - _time_to_float(event.end.time()))) * line_width
+        shape, text = _rectangle_shape_text(event.name, 0, y0, width, y1 - y0)
         drawing.add(shape)
         drawing.add(text)
     return drawing

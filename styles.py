@@ -30,16 +30,26 @@ day_table = TableStyle(
     ]
 )
 
+################################################
+#               WEEK TABLE                     #
+################################################
+
+WEEK_TABLE_colWidth = 60
+WEEK_TABLE_timeWidth = 50
+WEEK_TABLE_rowHeight = 36
+WEEK_TABLE_headerHeight = 24
+WEEK_TABLE_lineWidth = 0.5
+
 week_table = TableStyle(
     [
         ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
-        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
         ("BACKGROUND", (0, 1), (-1, -1), colors.white),
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+        ("GRID", (0, 0), (-1, -1), WEEK_TABLE_lineWidth, colors.lightgrey),
     ]
 )
 

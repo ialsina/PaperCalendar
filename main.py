@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Sequence, Optional
+from typing import Sequence, Optional, Tuple
 from ics import Calendar, Event
 
 from reportlab.lib.pagesizes import A4
@@ -67,7 +67,11 @@ def day_view(date, events):
     return elements
 
 
-def week_view(start_date, events: Sequence[Event]):
+def week_view(
+    start_date: datetime,
+    events: Sequence[Event],
+    hour_span: Optional[Tuple[int, int]] = (6, 23),
+):
     """Function to create a week view page with events."""
 
     elements = []
@@ -85,22 +89,31 @@ def week_view(start_date, events: Sequence[Event]):
 
     # Create week schedule table
     data = [["Time"] + WEEKDAYS]
-    for hour in range(6, 22):  # 6 AM to 10 PM
+    for hour in range(hour_span[0], hour_span[1]):
         row = [Paragraph(f"{hour}:00", styles.minimalist)]
-        for day in range(7):
-            day_date = start_date + timedelta(days=day)
-            day_events = [
-                event.name
-                for event in events
-                if event.begin.date() == day_date.date() and event.begin.hour == hour
-            ]
-            row.append(Paragraph("\n".join(day_events), styles.minimalist))
         data.append(row)
+    for day in range(7):
+        day_date = start_date + timedelta(days=day)
+        day_events = [
+            event for event in events if event.begin.date() == day_date.date()
+        ]
+        day_drawing = drawings.draw_schedule(
+            day_events,
+            width=styles.WEEK_TABLE_colWidth * 0.95,
+            height=styles.WEEK_TABLE_rowHeight * (hour_span[1] - hour_span[0]),
+            hour_min=hour_span[0],
+            hour_max=hour_span[1],
+            line_width=styles.WEEK_TABLE_lineWidth,
+        )
+        data[1].append(day_drawing)
     table = Table(
         data,
-        colWidths=[50] + [60 for _ in range(7)],
-        rowHeights=[24] + [36 for _ in range(16)],
-    )  # Adjusted colWidths and rowHeights
+        colWidths=[styles.WEEK_TABLE_timeWidth]
+        + [styles.WEEK_TABLE_colWidth for _ in range(7)],
+        rowHeights=[styles.WEEK_TABLE_headerHeight] +
+        # [styles.WEEK_TABLE_rowHeight * (hour_span[1] - hour_span[0])]
+        [styles.WEEK_TABLE_rowHeight for _ in range(hour_span[1] - hour_span[0])],
+    )
     table.setStyle(styles.week_table)
     elements.append(table)
 
