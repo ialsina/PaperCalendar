@@ -1,8 +1,6 @@
-from enum import Enum
-
 from reportlab.lib import colors
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import TableStyle, Table
+from reportlab.platypus import TableStyle
 
 title = ParagraphStyle(
     name="Title", fontSize=18, leading=22, alignment=1, spaceAfter=12  # Centered

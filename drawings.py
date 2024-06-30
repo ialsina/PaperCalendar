@@ -1,8 +1,7 @@
 from reportlab.graphics.shapes import Drawing, Circle, String, Rect
-from reportlab.lib.colors import Color, black, white
+from reportlab.lib.colors import black, white
 from typing import Optional
 
-import styles
 
 BUBBLE_RADIUS = 5
 FONT_SIZE = 4
@@ -40,6 +39,7 @@ def _rectangle_shape_text(text, x, y, w, h):
     )
     return shape, event_text
 
+
 def rectangle(
     event_name: str, width: float = 30, height: float = 10, x: float = 0, y: float = 0
 ):
@@ -50,7 +50,9 @@ def rectangle(
     return drawing
 
 
-def fit_rectangles(events, width: int, max_height, padding: int = 2, max_events: int = 4):
+def fit_rectangles(
+    events, width: int, max_height, padding: int = 2, max_events: int = 4
+):
     drawing = Drawing(width, max_height)
     events = events[:max_events]
     height = (max_height - padding * (len(events) - 1)) / max(len(events), 1)
@@ -59,7 +61,4 @@ def fit_rectangles(events, width: int, max_height, padding: int = 2, max_events:
         shape, text = _rectangle_shape_text(event, 0, y, width, height)
         drawing.add(shape)
         drawing.add(text)
-        # elements.append(
-        #     rectangle(event, width, height, x_position, y_position)
-        # )
     return drawing

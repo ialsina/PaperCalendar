@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 from datetime import datetime, timedelta
-import requests
-from ics import Calendar
-from yaml import safe_load
+from typing import Sequence, Optional
+from ics import Calendar, Event
 
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Table, Paragraph, Spacer, Flowable
+import requests
+from yaml import safe_load
 
 import styles
 import drawings
@@ -21,9 +24,6 @@ WEEKDAYS = [
     "Saturday",
     "Sunday",
 ]
-
-# Set up the document
-doc = SimpleDocTemplate("calendar.pdf", pagesize=A4)
 
 
 def fetch_events_from_ics(url):
@@ -67,12 +67,17 @@ def day_view(date, events):
     return elements
 
 
-def week_view(start_date, events):
+def week_view(start_date, events: Sequence[Event]):
     """Function to create a week view page with events."""
+
     elements = []
 
     title = Paragraph(
-        f"Week {start_date.strftime('%U')}: {start_date.strftime('%B %d')} - {(start_date + timedelta(days=6)).strftime('%B %d, %Y')}",
+        (
+            f"Week {start_date.strftime('%U')}: "
+            f"{start_date.strftime('%B %d')} - "
+            f"{(start_date + timedelta(days=6)).strftime('%B %d, %Y')}"
+        ),
         styles.title,
     )
     elements.append(title)
@@ -102,7 +107,17 @@ def week_view(start_date, events):
     return elements
 
 
-def month_view(year, month, events):
+def month_view(
+    year: int,
+    month: int,
+    style: ParagraphStyle,  # pylint: disable=E0602
+    events: Optional[Sequence[Event]] = None,
+) -> Sequence[Flowable]:
+    """Function to create a month view page with events."""
+
+    if events is None:
+        events = []
+
     elements = []
 
     title = Paragraph(f"{datetime(year, month, 1).strftime('%B %Y')}", styles.title)
@@ -133,18 +148,19 @@ def month_view(year, month, events):
                     and event.begin.day == day
                 )
             ]
-            day_cell = [Paragraph(f"{day}", styles.minimalist)]
+            day_cell = [Paragraph(f"{day}", style)]
             day_drawing = drawings.fit_rectangles(
-                    day_events,
-                    max_events=4,
-                    width=0.92 * styles.MONTH_TABLE_colWidth,
-                    max_height=(
-                        styles.MONTH_TABLE_rowHeight
-                        - styles.minimalist.fontSize
-                        - styles.minimalist.spaceAfter
-                    ) * 0.8,
-                    padding=2,
+                day_events,
+                max_events=4,
+                width=0.92 * styles.MONTH_TABLE_colWidth,
+                max_height=(
+                    styles.MONTH_TABLE_rowHeight
+                    - getattr(style, "fontSize", 0)
+                    - getattr(style, "spaceAfter", 0)
                 )
+                * 0.8,
+                padding=2,
+            )
             day_cell.append(day_drawing)
             month_calendar[-1].append(day_cell)
             day += 1
@@ -170,27 +186,40 @@ def month_view(year, month, events):
     return elements
 
 
-# events = fetch_events_from_ics(ics_url)
-events = [event for url in URLS for event in fetch_events_from_ics(url)]
+def main() -> None:
+    # Set up the document
+    doc = SimpleDocTemplate("calendar.pdf", pagesize=A4)
 
-# Compile the document with day, week, and month views
-all_elements = []
+    # events = fetch_events_from_ics(ics_url)
+    events = [event for url in URLS for event in fetch_events_from_ics(url)]
 
-# Example: Add one day view, one week view, and one month view with events
-now = datetime.now()
+    # Compile the document with day, week, and month views
+    elements = []
 
-all_elements.extend(
-    day_view(now, list(filter(lambda event: event.begin.date() == now.date(), events)))
-)
-all_elements.append(Spacer(1, 36))
-all_elements.extend(week_view(now - timedelta(days=now.weekday()), events))
-all_elements.append(Spacer(1, 36))
-all_elements.extend(
-    month_view(
-        now.year,
-        now.month,
-        list(filter(lambda event: event.begin.date().month == now.month, events)),
+    # Example: Add one day view, one week view, and one month view with events
+    now = datetime.now()
+
+    elements.extend(
+        day_view(
+            now, list(filter(lambda event: event.begin.date() == now.date(), events))
+        )
     )
-)
+    elements.append(Spacer(1, 36))
+    elements.extend(week_view(now - timedelta(days=now.weekday()), events))
+    elements.append(Spacer(1, 36))
+    elements.extend(
+        month_view(
+            year=now.year,
+            month=now.month,
+            style=styles.minimalist,
+            events=list(
+                filter(lambda event: event.begin.date().month == now.month, events)
+            ),
+        )
+    )
 
-doc.build(all_elements)
+    doc.build(elements)
+
+
+if __name__ == "__main__":
+    main()
