@@ -1,6 +1,8 @@
+from enum import Enum
+
 from reportlab.lib import colors
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import TableStyle
+from reportlab.platypus import TableStyle, Table
 
 title = ParagraphStyle(
     name="Title", fontSize=18, leading=22, alignment=1, spaceAfter=12  # Centered
@@ -43,11 +45,20 @@ week_table = TableStyle(
     ]
 )
 
+################################################
+#              MONTH TABLE                     #
+################################################
+
+MONTH_TABLE_colWidth = 80
+MONTH_TABLE_rowHeight = 60
+MONTH_TABLE_headerHeight = 24
+
 month_table = TableStyle(
     [
         ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
-        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        # ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica"),
         ("BOTTOMPADDING", (0, 0), (-1, 0), 8),

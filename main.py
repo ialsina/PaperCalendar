@@ -1,16 +1,26 @@
-from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, Paragraph, Spacer
 from datetime import datetime, timedelta
 import requests
 from ics import Calendar
 from yaml import safe_load
 
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, Paragraph, Spacer
+
 import styles
+import drawings
 
 with open("config.yaml", "r", encoding="utf-8") as cf:
     URLS = safe_load(cf)["URLS"]
 
-WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+WEEKDAYS = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+]
 
 # Set up the document
 doc = SimpleDocTemplate("calendar.pdf", pagesize=A4)
@@ -19,7 +29,7 @@ doc = SimpleDocTemplate("calendar.pdf", pagesize=A4)
 def fetch_events_from_ics(url):
     """Function to fetch events from an online ICS calendar"""
 
-    response = requests.get(url)
+    response = requests.get(url, timeout=60)
     if response.status_code == 200:
         calendar = Calendar(response.text)
         return calendar.events
@@ -69,18 +79,7 @@ def week_view(start_date, events):
     elements.append(Spacer(1, 12))  # Add some space below the title
 
     # Create week schedule table
-    data = [
-        [
-            "Time",
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
-            "Sunday",
-        ]
-    ]
+    data = [["Time"] + WEEKDAYS]
     for hour in range(6, 22):  # 6 AM to 10 PM
         row = [Paragraph(f"{hour}:00", styles.minimalist)]
         for day in range(7):
@@ -92,7 +91,6 @@ def week_view(start_date, events):
             ]
             row.append(Paragraph("\n".join(day_events), styles.minimalist))
         data.append(row)
-
     table = Table(
         data,
         colWidths=[50] + [60 for _ in range(7)],
@@ -105,8 +103,6 @@ def week_view(start_date, events):
 
 
 def month_view(year, month, events):
-    """Function to create a month view page with events."""
-
     elements = []
 
     title = Paragraph(f"{datetime(year, month, 1).strftime('%B %Y')}", styles.title)
@@ -114,7 +110,7 @@ def month_view(year, month, events):
     elements.append(Spacer(1, 12))  # Add some space below the title
 
     # Create month calendar table
-    data = [[Paragraph(weekday, styles.weekday) for weekday in WEEKDAYS]]
+    data = [[Paragraph(weekday[:3], styles.weekday) for weekday in WEEKDAYS]]
     month_calendar = [[]]
 
     start_day = datetime(year, month, 1).weekday()  # 0 is Monday, 6 is Sunday
@@ -128,10 +124,29 @@ def month_view(year, month, events):
         try:
             if len(month_calendar[-1]) == 7:
                 month_calendar.append([])
-            day_events = [event.name for event in events if event.begin.day == day]
-            month_calendar[-1].append(
-                Paragraph(f"{day}\n" + "\n".join(day_events), styles.minimalist)
-            )
+            day_events = [
+                event.name
+                for event in events
+                if (
+                    event.begin.year == year
+                    and event.begin.month == month
+                    and event.begin.day == day
+                )
+            ]
+            day_cell = [Paragraph(f"{day}", styles.minimalist)]
+            day_drawing = drawings.fit_rectangles(
+                    day_events,
+                    max_events=4,
+                    width=0.92 * styles.MONTH_TABLE_colWidth,
+                    max_height=(
+                        styles.MONTH_TABLE_rowHeight
+                        - styles.minimalist.fontSize
+                        - styles.minimalist.spaceAfter
+                    ) * 0.8,
+                    padding=2,
+                )
+            day_cell.append(day_drawing)
+            month_calendar[-1].append(day_cell)
             day += 1
         except ValueError:
             break
@@ -145,9 +160,10 @@ def month_view(year, month, events):
 
     table = Table(
         data,
-        colWidths=[50 for _ in range(7)],
-        rowHeights=[24] + [84 for _ in range(len(month_calendar))],
-    )  # Adjusted colWidths and rowHeights
+        colWidths=[styles.MONTH_TABLE_colWidth for _ in range(7)],
+        rowHeights=[styles.MONTH_TABLE_headerHeight]
+        + [styles.MONTH_TABLE_rowHeight for _ in range(len(month_calendar))],
+    )
     table.setStyle(styles.month_table)
     elements.append(table)
 
