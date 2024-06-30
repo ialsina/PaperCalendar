@@ -38,7 +38,11 @@ def fetch_events_from_ics(url):
     return []
 
 
-def day_view(date, events):
+def day_view(
+    date: datetime,
+    events: Sequence[Event],
+    hour_span: Optional[Tuple[int, int]] = (6, 23),
+):
     """Function to create a day view page with events"""
 
     elements = []
@@ -49,18 +53,24 @@ def day_view(date, events):
 
     # Create hourly schedule table
     data = [["Time", "Task"]]
-    for hour in range(6, 22):  # 6 AM to 10 PM
-        hour_str = f"{hour}:00"
-        tasks = [event.name for event in events if event.begin.hour == hour]
-        data.append(
-            [
-                Paragraph(hour_str, styles.minimalist),
-                Paragraph("\n".join(tasks), styles.minimalist),
-            ]
-        )
+    for hour in range(hour_span[0], hour_span[1]):
+        row = [Paragraph(f"{hour}:00", styles.minimalist)]
+        data.append(row)
+    drawing = drawings.draw_schedule(
+        events,
+        width=styles.DAY_colWidth * 0.95,
+        height=styles.DAY_rowHeight * (hour_span[1] - hour_span[0]),
+        hour_min=hour_span[0],
+        hour_max=hour_span[1],
+        line_width=styles.DAY_lineWidth,
+    )
+    data[1].append(drawing)
 
     table = Table(
-        data, colWidths=[50, 490], rowHeights=[24] + [36 for _ in range(16)]
+        data,
+        colWidths=[styles.DAY_timeWidth, styles.DAY_colWidth],
+        rowHeights=[styles.DAY_headerHeight] +
+        [styles.DAY_rowHeight for _ in range(hour_span[1] - hour_span[0])],
     )  # Adjusted colWidths and rowHeights
     table.setStyle(styles.day_table)
     elements.append(table)
