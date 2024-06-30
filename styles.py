@@ -34,11 +34,11 @@ day_table = TableStyle(
 #               WEEK TABLE                     #
 ################################################
 
-WEEK_TABLE_colWidth = 60
-WEEK_TABLE_timeWidth = 50
-WEEK_TABLE_rowHeight = 36
-WEEK_TABLE_headerHeight = 24
-WEEK_TABLE_lineWidth = 0.5
+WEEK_colWidth = 60
+WEEK_timeWidth = 50
+WEEK_rowHeight = 36
+WEEK_headerHeight = 24
+WEEK_lineWidth = 0.5
 
 week_table = TableStyle(
     [
@@ -49,7 +49,7 @@ week_table = TableStyle(
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
         ("BACKGROUND", (0, 1), (-1, -1), colors.white),
-        ("GRID", (0, 0), (-1, -1), WEEK_TABLE_lineWidth, colors.lightgrey),
+        ("GRID", (0, 0), (-1, -1), WEEK_lineWidth, colors.lightgrey),
     ]
 )
 
@@ -57,9 +57,9 @@ week_table = TableStyle(
 #              MONTH TABLE                     #
 ################################################
 
-MONTH_TABLE_colWidth = 80
-MONTH_TABLE_rowHeight = 60
-MONTH_TABLE_headerHeight = 24
+MONTH_colWidth = 80
+MONTH_rowHeight = 60
+MONTH_headerHeight = 24
 
 month_table = TableStyle(
     [

@@ -25,6 +25,7 @@ WEEKDAYS = [
     "Sunday",
 ]
 
+events = []
 
 def fetch_events_from_ics(url):
     """Function to fetch events from an online ICS calendar"""
@@ -99,20 +100,20 @@ def week_view(
         ]
         day_drawing = drawings.draw_schedule(
             day_events,
-            width=styles.WEEK_TABLE_colWidth * 0.95,
-            height=styles.WEEK_TABLE_rowHeight * (hour_span[1] - hour_span[0]),
+            width=styles.WEEK_colWidth * 0.95,
+            height=styles.WEEK_rowHeight * (hour_span[1] - hour_span[0]),
             hour_min=hour_span[0],
             hour_max=hour_span[1],
-            line_width=styles.WEEK_TABLE_lineWidth,
+            line_width=styles.WEEK_lineWidth,
         )
         data[1].append(day_drawing)
     table = Table(
         data,
-        colWidths=[styles.WEEK_TABLE_timeWidth]
-        + [styles.WEEK_TABLE_colWidth for _ in range(7)],
-        rowHeights=[styles.WEEK_TABLE_headerHeight] +
-        # [styles.WEEK_TABLE_rowHeight * (hour_span[1] - hour_span[0])]
-        [styles.WEEK_TABLE_rowHeight for _ in range(hour_span[1] - hour_span[0])],
+        colWidths=[styles.WEEK_timeWidth]
+        + [styles.WEEK_colWidth for _ in range(7)],
+        rowHeights=[styles.WEEK_headerHeight] +
+        # [styles.WEEK_rowHeight * (hour_span[1] - hour_span[0])]
+        [styles.WEEK_rowHeight for _ in range(hour_span[1] - hour_span[0])],
     )
     table.setStyle(styles.week_table)
     elements.append(table)
@@ -165,9 +166,9 @@ def month_view(
             day_drawing = drawings.fit_rectangles(
                 day_events,
                 max_events=4,
-                width=0.92 * styles.MONTH_TABLE_colWidth,
+                width=0.92 * styles.MONTH_colWidth,
                 max_height=(
-                    styles.MONTH_TABLE_rowHeight
+                    styles.MONTH_rowHeight
                     - getattr(style, "fontSize", 0)
                     - getattr(style, "spaceAfter", 0)
                 )
@@ -189,9 +190,9 @@ def month_view(
 
     table = Table(
         data,
-        colWidths=[styles.MONTH_TABLE_colWidth for _ in range(7)],
-        rowHeights=[styles.MONTH_TABLE_headerHeight]
-        + [styles.MONTH_TABLE_rowHeight for _ in range(len(month_calendar))],
+        colWidths=[styles.MONTH_colWidth for _ in range(7)],
+        rowHeights=[styles.MONTH_headerHeight]
+        + [styles.MONTH_rowHeight for _ in range(len(month_calendar))],
     )
     table.setStyle(styles.month_table)
     elements.append(table)
@@ -200,6 +201,8 @@ def month_view(
 
 
 def main() -> None:
+    global events
+
     # Set up the document
     doc = SimpleDocTemplate("calendar.pdf", pagesize=A4)
 
