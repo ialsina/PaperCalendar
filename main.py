@@ -58,19 +58,19 @@ def day_view(
         data.append(row)
     drawing = drawings.draw_schedule(
         events,
-        width=styles.DAY_colWidth * 0.95,
-        height=styles.DAY_rowHeight * (hour_span[1] - hour_span[0]),
+        width=styles.day.colWidth * 0.95,
+        height=styles.day.rowHeight * (hour_span[1] - hour_span[0]),
         hour_min=hour_span[0],
         hour_max=hour_span[1],
-        line_width=styles.DAY_lineWidth,
+        line_width=styles.day.lineWidth,
     )
     data[1].append(drawing)
 
     table = Table(
         data,
-        colWidths=[styles.DAY_timeWidth, styles.DAY_colWidth],
-        rowHeights=[styles.DAY_headerHeight] +
-        [styles.DAY_rowHeight for _ in range(hour_span[1] - hour_span[0])],
+        colWidths=[styles.day.timeWidth, styles.day.colWidth],
+        rowHeights=[styles.day.headerHeight] +
+        [styles.day.rowHeight for _ in range(hour_span[1] - hour_span[0])],
     )  # Adjusted colWidths and rowHeights
     table.setStyle(styles.day_table)
     elements.append(table)
@@ -110,20 +110,20 @@ def week_view(
         ]
         day_drawing = drawings.draw_schedule(
             day_events,
-            width=styles.WEEK_colWidth * 0.95,
-            height=styles.WEEK_rowHeight * (hour_span[1] - hour_span[0]),
+            width=styles.week.colWidth * 0.95,
+            height=styles.week.rowHeight * (hour_span[1] - hour_span[0]),
             hour_min=hour_span[0],
             hour_max=hour_span[1],
-            line_width=styles.WEEK_lineWidth,
+            line_width=styles.week.lineWidth,
         )
         data[1].append(day_drawing)
     table = Table(
         data,
-        colWidths=[styles.WEEK_timeWidth]
-        + [styles.WEEK_colWidth for _ in range(7)],
-        rowHeights=[styles.WEEK_headerHeight] +
-        # [styles.WEEK_rowHeight * (hour_span[1] - hour_span[0])]
-        [styles.WEEK_rowHeight for _ in range(hour_span[1] - hour_span[0])],
+        colWidths=[styles.week.timeWidth]
+        + [styles.week.colWidth for _ in range(7)],
+        rowHeights=[styles.week.headerHeight] +
+        # [styles.week.rowHeight * (hour_span[1] - hour_span[0])]
+        [styles.week.rowHeight for _ in range(hour_span[1] - hour_span[0])],
     )
     table.setStyle(styles.week_table)
     elements.append(table)
@@ -176,9 +176,9 @@ def month_view(
             day_drawing = drawings.fit_rectangles(
                 day_events,
                 max_events=4,
-                width=0.92 * styles.MONTH_colWidth,
+                width=0.92 * styles.month.colWidth,
                 max_height=(
-                    styles.MONTH_rowHeight
+                    styles.month.rowHeight
                     - getattr(style, "fontSize", 0)
                     - getattr(style, "spaceAfter", 0)
                 )
@@ -200,9 +200,9 @@ def month_view(
 
     table = Table(
         data,
-        colWidths=[styles.MONTH_colWidth for _ in range(7)],
-        rowHeights=[styles.MONTH_headerHeight]
-        + [styles.MONTH_rowHeight for _ in range(len(month_calendar))],
+        colWidths=[styles.month.colWidth for _ in range(7)],
+        rowHeights=[styles.month.headerHeight]
+        + [styles.month.rowHeight for _ in range(len(month_calendar))],
     )
     table.setStyle(styles.month_table)
     elements.append(table)

@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from reportlab.lib import colors
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import TableStyle
@@ -10,22 +12,34 @@ minimalist = ParagraphStyle(
 )
 weekday = ParagraphStyle(
     name="Weekday",
-    fontSize=10,
+    fontSize=8,
     leading=12,
-    alignment=1,  # Centered
+    alignment=1,  # centered
     fontName="Helvetica",
     spaceAfter=6,
 )
+
+@dataclass(frozen=True)
+class TableMeasurements:
+    # pylint: disable=C0103
+    colWidth: float
+    timeWidth: float
+    rowHeight: float
+    headerHeight: float
+    lineWidth: float
+
 
 ################################################
 #                DAY TABLE                     #
 ################################################
 
-DAY_colWidth = 450
-DAY_timeWidth = 50
-DAY_rowHeight = 36
-DAY_headerHeight = 24
-DAY_lineWidth = 0.5
+day = TableMeasurements(
+    colWidth = 450,
+    timeWidth = 50,
+    rowHeight = 36,
+    headerHeight = 24,
+    lineWidth = 0.5,
+)
 
 day_table = TableStyle(
     [
@@ -36,7 +50,7 @@ day_table = TableStyle(
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
         ("BACKGROUND", (0, 1), (-1, -1), colors.white),
-        ("GRID", (0, 0), (-1, -1), DAY_lineWidth, colors.lightgrey),
+        ("GRID", (0, 0), (-1, -1), day.lineWidth, colors.lightgrey),
     ]
 )
 
@@ -44,11 +58,13 @@ day_table = TableStyle(
 #               WEEK TABLE                     #
 ################################################
 
-WEEK_colWidth = 60
-WEEK_timeWidth = 50
-WEEK_rowHeight = 36
-WEEK_headerHeight = 24
-WEEK_lineWidth = 0.5
+week = TableMeasurements(
+    colWidth = 60,
+    timeWidth = 50,
+    rowHeight = 36,
+    headerHeight = 24,
+    lineWidth = 0.5,
+)
 
 week_table = TableStyle(
     [
@@ -59,7 +75,7 @@ week_table = TableStyle(
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
         ("BACKGROUND", (0, 1), (-1, -1), colors.white),
-        ("GRID", (0, 0), (-1, -1), WEEK_lineWidth, colors.lightgrey),
+        ("GRID", (0, 0), (-1, -1), week.lineWidth, colors.lightgrey),
     ]
 )
 
@@ -67,9 +83,13 @@ week_table = TableStyle(
 #              MONTH TABLE                     #
 ################################################
 
-MONTH_colWidth = 80
-MONTH_rowHeight = 60
-MONTH_headerHeight = 24
+month = TableMeasurements(
+    colWidth = 80,
+    rowHeight = 60,
+    headerHeight = 24,
+    timeWidth=None,
+    lineWidth=0.5,
+)
 
 month_table = TableStyle(
     [
